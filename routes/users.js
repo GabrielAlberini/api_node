@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { getItem, getItems, createItem } = require("../controllers/users");
 
-router.get("/", getItems);
-router.get("/:id", getItem);
-router.post("/", createItem);
+router.get("/users", (req, res) => {
+  const data = ["hola", "mundo"];
+
+  res.send({ data });
+});
 
 module.exports = router;
