@@ -22,7 +22,7 @@ app.listen(port, async () => {
     addr: port,
   });
 
-  console.log("Tu app está lista en:", url);
+  // console.log("Tu app está lista en:", url);
 });
 
 dbConnect();
