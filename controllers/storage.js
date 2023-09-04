@@ -1,11 +1,11 @@
+const fs = require("node:fs");
+
 const { matchedData } = require("express-validator");
 const { storageModel } = require("../models");
 const { handleHttpError } = require("../utils/handleError");
-const {
-  middlewareFilenameStorage,
-} = require("../middleware/middlewareFilenameStorage");
 
 const PUBLIC_URL = process.env.PUBLIC_URL;
+const FILE_PATH = `${__dirname}/../storage`;
 
 /**
  * Get items
@@ -35,7 +35,7 @@ const getItem = async (req, res) => {
     const data = await storageModel.findById(id);
     res.send({ data });
   } catch (error) {
-    handleHttpError(res, "ERROR_GET_STORAGE");
+    handleHttpError(res, "ERROR_GET_STORAGE_ITEM");
   }
 };
 
@@ -47,7 +47,11 @@ const getItem = async (req, res) => {
 
 const createItem = async (req, res) => {
   try {
-    const fileData = middlewareFilenameStorage(req, res);
+    const { file } = req;
+    const fileData = {
+      filename: file.filename,
+      url: `${PUBLIC_URL}/${file.filename}`, // ubicación del archivo en local
+    };
     const data = await storageModel.create(fileData);
     res.send({ data });
   } catch (error) {
@@ -64,10 +68,23 @@ const createItem = async (req, res) => {
 const deleteItem = async (req, res) => {
   try {
     const { id } = matchedData(req);
-    const data = await storageModel.delete({ _id: id });
-    res.send({ data });
+    const data = await storageModel.findById(id);
+
+    if (!data) {
+      const error = new Error("No such file or directory");
+      error.statusCode = 404;
+      throw error;
+    }
+    const { filename } = data;
+    const filePath = `${FILE_PATH}/${filename}`;
+
+    fs.unlinkSync(filePath);
+
+    await storageModel.deleteOne({ _id: id });
+
+    res.send({ filePath, deleted: true });
   } catch (error) {
-    handleHttpError(res, "ERROR_DELETE_ITEM_STORAGE");
+    handleHttpError(res, error.message, error.statusCode);
   }
 };
 
